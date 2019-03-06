@@ -1,7 +1,6 @@
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from keras.callbacks import ModelCheckpoint
-from keras.preprocessing.image import ImageDataGenerator
 from keras.applications.resnet50 import ResNet50
 from imutils import paths
 import numpy as np
@@ -61,8 +60,7 @@ y_train = lb.fit_transform(y_train)
 y_test = lb.transform(y_test)
 
 # construct the image generator for data augmentation
-aug = ImageDataGenerator(rotation_range=30, width_shift_range=0.1, height_shift_range=0.1, shear_range=0.2,
-                         zoom_range=0.2, horizontal_flip=True, fill_mode="nearest")
+
 
 # init the model and optimizer
 model = ResNet50(weights='imagenet', include_top=False)
@@ -73,11 +71,11 @@ model.compile(loss="categorical_crossentropy",
 
 # train the network
 checkpoints = ModelCheckpoint(file_path, save_best_only=True, verbose=1, monitor='val_acc', mode='max')
-model.fit_generator(aug.flow(x_train, y_train, batch_size=batch_size),
-                    validation_data=(x_test, y_test),
-                    epochs=epochs,
-                    verbose=1,
-                    callbacks=[checkpoints])
+model.fit(x_train, y_train, batch_size=batch_size,
+          validation_data=(x_test, y_test),
+          epochs=epochs,
+          verbose=1,
+          callbacks=[checkpoints])
 
 # result
 score = model.evaluate(x_test, y_test, verbose=0)
@@ -89,33 +87,3 @@ model.save(args.model)
 f = open(args.labelbin, 'wb')
 f.write(pickle.dumps(lb))
 f.close()
-
-"""
-[INFO] loading images...
-1.WARNING:tensorflow:
-From /home/lab802/miniconda3/envs/fungi/lib/python3.7/site-packages/tensorflow/python/framework/op_def_library.py:263: 
-colocate_with (from tensorflow.python.framework.ops) is deprecated and will be removed in a future version.
-Instructions for updating: Colocations handled automatically by placer.
-2./home/lab802/miniconda3/envs/fungi/lib/python3.7/site-packages/keras_applications/resnet50.py:265: 
-UserWarning: The output shape of `ResNet50(include_top=False)` has been changed since Keras 2.2.0.
-warnings.warn('The output shape of `ResNet50(include_top=False)` '
-3.WARNING:tensorflow:
-From /home/lab802/miniconda3/envs/fungi/lib/python3.7/site-packages/tensorflow/python/ops/math_ops.py:3066:
-to_int32 (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version. 
-Instructions for updating:Use tf.cast instead.
-[INFO] training network...
-WARNING:tensorflow:
-From /home/lab802/miniconda3/envs/fungi/lib/python3.7/site-packages/tensorflow/python/ops/math_ops.py:3066: to_int32 
-(from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
-Traceback (most recent call last):
-  File "model.py", line 80, in <module>
-    callbacks=[checkpoints])
-  File "/home/lab802/miniconda3/envs/fungi/lib/python3.7/site-packages/keras/legacy/interfaces.py", line 91, in wrapper
-    return func(*args, **kwargs)
-  File "/home/lab802/miniconda3/envs/fungi/lib/python3.7/site-packages/keras/engine/training.py", 
-    line 1418, in fit_generator: initial_epoch=initial_epoch)
-  File "/home/lab802/miniconda3/envs/fungi/lib/python3.7/site-packages/keras/engine/training_generator.py", line 55, 
-    in fit_generator: raise ValueError('`steps_per_epoch=None` is only valid for a'
-ValueError: `steps_per_epoch=None` is only valid for a generator based on the `keras.utils.Sequence` class. 
-Please specify `steps_per_epoch` or use the `keras.utils.Sequence` class.
-"""
