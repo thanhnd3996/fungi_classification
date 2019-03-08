@@ -1,7 +1,9 @@
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
+from keras import Sequential
 from keras.callbacks import ModelCheckpoint
 from keras.applications.resnet50 import ResNet50
+from keras.layers import GlobalAveragePooling2D, Dropout, Dense
 from imutils import paths
 import numpy as np
 import argparse
@@ -16,15 +18,11 @@ batch_size = 128
 pool_size = (2, 2)
 kernel_size = (3, 3)
 epochs = 20
-data_augmentation = True
-file_path = './checkpoints/model/h5'
 
 # construct the argument parser and parse the arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--dataset", required=True,
                     help="path to input dataset of images")
-parser.add_argument("-m", "--model", required=True,
-                    help="path to output trained model")
 parser.add_argument("-l", "--labelbin", required=True,
                     help="path to output label binarizer")
 args = parser.parse_args()
@@ -59,17 +57,22 @@ lb = LabelBinarizer()
 y_train = lb.fit_transform(y_train)
 y_test = lb.transform(y_test)
 
-# construct the image generator for data augmentation
-
-
 # init the model and optimizer
-model = ResNet50(weights='imagenet', include_top=False)
+base_model = ResNet50(weights='imagenet', include_top=False)
+train_features = base_model.predict(x_train)
+model = Sequential()
+model.add(GlobalAveragePooling2D(input_shape=train_features))
+model.add(Dropout(0.3))
+model.add(Dense(10, activation='softmax'))
+
+# model = ResNet50(weights='imagenet', include_top=False)
 print("[INFO] training network...")
 model.compile(loss="categorical_crossentropy",
               optimizer="adadelta",
               metrics=['accuracy'])
 
 # train the network
+file_path = './checkpoints/model/h5'
 checkpoints = ModelCheckpoint(file_path, save_best_only=True, verbose=1, monitor='val_acc', mode='max')
 model.fit(x_train, y_train, batch_size=batch_size,
           validation_data=(x_test, y_test),
@@ -82,8 +85,7 @@ score = model.evaluate(x_test, y_test, verbose=0)
 print('Test score:', score[0])
 print('Test accuracy:', score[1])
 
-# save the model and label binarizer to disk
-model.save(args.model)
+# label binarizer to disk
 f = open(args.labelbin, 'wb')
 f.write(pickle.dumps(lb))
 f.close()
