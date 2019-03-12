@@ -1,10 +1,7 @@
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from model.resnet import resnet50
-from keras import Sequential
 from keras.callbacks import ModelCheckpoint
-from keras.applications.resnet50 import ResNet50
-from keras.layers import GlobalAveragePooling2D, Dropout, Dense
 from imutils import paths
 import numpy as np
 import argparse
@@ -21,6 +18,8 @@ epochs = 1000
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--dataset", required=True,
                     help="path to input dataset of images")
+parser.add_argument("-m", "--model", required=True,
+                    help="path to best trained model ")
 parser.add_argument("-l", "--labelbin", required=True,
                     help="path to output label binarizer")
 args = parser.parse_args()
@@ -37,6 +36,7 @@ random.shuffle(image_paths)
 
 # loop over the input images
 for image_path in image_paths:
+    print(image_path)
     image = cv2.imread(image_path)
     image = cv2.resize(image, (64, 64))
     image = np.reshape(image, (64, 64, 1))
@@ -71,23 +71,16 @@ model.compile(loss="parse_categorical_crossentropy",
               metrics=['accuracy'])
 
 # train and save the model
-
-base_model = ResNet50(weights='imagenet', include_top=False)
-train_features = base_model.predict(x_train)
-model = Sequential()
-model.add(GlobalAveragePooling2D(input_shape=train_features))
-model.add(Dropout(0.3))
-model.add(Dense(10, activation='softmax'))
+model = resnet50((64, 64, 1), len(lb.classes_))
 
 # model = ResNet50(weights='imagenet', include_top=False)
 print("[INFO] training network...")
-model.compile(loss="categorical_crossentropy",
+model.compile(loss="sparse_categorical_crossentropy",
               optimizer="adadelta",
               metrics=['accuracy'])
 
 # train the network
-file_path = './output/model.h5'
-checkpoints = ModelCheckpoint(file_path, save_best_only=True, verbose=1, monitor='val_acc', mode='max')
+checkpoints = ModelCheckpoint(args.model, save_best_only=True, verbose=1, monitor='val_acc', mode='max')
 model.fit(x_train, y_train, batch_size=batch_size,
           validation_data=(x_test, y_test),
           epochs=epochs,
