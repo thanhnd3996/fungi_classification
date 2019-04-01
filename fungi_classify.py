@@ -12,8 +12,8 @@ checkpoint_2_path = '../model/checkpoint_2.h5'
 model_json_path = '../model/model.json'
 model_1_path = '../model/model_1.h5'
 model_2_path = '../model/model_2.h5'
-train_dir = ""
-val_dir = ""
+train_dir = "../dataset/train_images"
+val_dir = "../dataset/val_images"
 
 
 def create_model(num_classes, model_file):
