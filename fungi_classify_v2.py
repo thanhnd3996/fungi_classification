@@ -1,6 +1,10 @@
+import os
+import cv2
+import argparse
+import numpy as np
 import pandas as pd
 from keras import Model
-from data.load_images import load_images
+from imutils import paths
 from keras.callbacks import ModelCheckpoint
 from keras.applications.resnet50 import ResNet50
 from keras.layers import GlobalAveragePooling2D, Dense
@@ -8,12 +12,50 @@ from keras.preprocessing.image import ImageDataGenerator
 
 """file path"""
 checkpoint_path = './model/checkpoint_1.h5'
-model_path = './model/model.h5'
 name_csv = "./dataset/train_val_annotations/train.csv"
 
 """parameters"""
 batch_size = 32
 epochs = 100
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-td", "--traindir", required=True, help="path to train dir")
+parser.add_argument("-vd", "--valdir", required=True, help="path to val dir")
+args = parser.parse_args()
+
+
+def load_images():
+    print("[INFO] loading images...")
+    x_train = []
+    y_train = []
+    x_val = []
+    y_val = []
+
+    train_image_paths = sorted(list(paths.list_images(args.traindir)))
+    for train_image_path in train_image_paths:
+        image = cv2.imread(train_image_path, 0)
+        image = cv2.resize(image, (64, 64))
+        image = np.reshape(image, (64, 64, 1))
+        x_train.append(image)
+        label = train_image_path.split(os.path.sep)[-2]
+        label = np.reshape(label, -1)
+        y_train.append(label)
+    x_train = np.array(x_train, dtype="float") / 255
+    y_train = np.array(y_train)
+
+    val_images_paths = sorted(list(paths.list_images(args.valdir)))
+    for image_path in val_images_paths:
+        image = cv2.imread(image_path, 0)
+        image = cv2.resize(image, (64, 64))
+        image = np.reshape(image, (64, 64, 1))
+        x_val.append(image)
+        label = image_path.split(os.path.sep)[-2]
+        label = np.reshape(label, -1)
+        y_val.append(label)
+    x_val = np.array(x_val, dtype="float") / 255
+    y_val = np.array(y_val)
+
+    return x_train, y_train, x_val, y_val
 
 
 def create_model(num_classes):
@@ -40,7 +82,7 @@ def create_model(num_classes):
 
     # compile model
     print("[INFO] training network...")
-    model.compile(loss="categorical_crossentropy",
+    model.compile(loss="sparse_categorical_crossentropy",
                   optimizer="adadelta",
                   metrics=['accuracy'])
 
@@ -74,7 +116,7 @@ def train_network():
                   metrics=['accuracy'])
     model.fit_generator(aug.flow(x_train, y_train, batch_size=batch_size),
                         validation_data=(x_val, y_val),
-                        steps_per_epoch=len(x_train) // batch_size,
+                        steps_per_epoch=len(df_train.index) // batch_size,
                         epochs=epochs,
                         callbacks=[checkpoints])
 
@@ -84,5 +126,5 @@ def train_network():
     print('Test accuracy:', score[1])
 
 
-if '__name__' == '__main__':
+if __name__ == '__main__':
     train_network()
