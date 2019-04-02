@@ -269,11 +269,13 @@ def train_all(df_train, df_val,
     n_classes = len(set(df_train.category_id))
 
     # Create model
-    if verbose >= 1: print("Instantiating Inception V3...")
+    if verbose >= 1:
+        print("Instantiating Inception V3...")
     base_model, model = instantiate(n_classes, inception_json=model_dir + "inceptionv3_mod.json")
 
     # Train model
-    if verbose >= 1: print("Fine-tuning Inception V3 first two passes...")
+    if verbose >= 1:
+        print("Fine-tuning Inception V3 first two passes...")
     finetune(base_model, model, train_dir, val_dir, batch_size=512,
              nb_train_samples=len(df_train.index), nb_validation_samples=len(df_val.index),
              patience_1=1, patience_2=2, epochs_1=15, epochs_2=30,
@@ -284,7 +286,8 @@ def train_all(df_train, df_val,
              layer_names_file=model_dir + "inceptionv3_mod_layer_names.txt",
              class_imbalance=True, verbose=verbose)
 
-    if verbose >= 1: print("Fine-tuning Inception V3 third pass...")
+    if verbose >= 1:
+        print("Fine-tuning Inception V3 third pass...")
     finetune_from_saved(model_dir + "inceptionv3_fine_tuned_check_point_2.h5",
                         model_dir + "inceptionv3_fine_tuned_3.h5",
                         model_dir + "inceptionv3_mod.json",
