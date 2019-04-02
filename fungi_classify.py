@@ -7,13 +7,13 @@ from keras.optimizers import SGD
 from keras.preprocessing.image import ImageDataGenerator
 
 """file path"""
-checkpoint_1_path = '../model/checkpoint_1.h5'
-checkpoint_2_path = '../model/checkpoint_2.h5'
-model_json_path = '../model/model.json'
-model_1_path = '../model/model_1.h5'
-model_2_path = '../model/model_2.h5'
-train_dir = "../dataset/train_images"
-val_dir = "../dataset/val_images"
+checkpoint_1_path = './model/checkpoint_1.h5'
+checkpoint_2_path = './model/checkpoint_2.h5'
+model_json_path = './model/model.json'
+model_1_path = './model/model_1.h5'
+model_2_path = './model/model_2.h5'
+train_dir = "./dataset/train_images"
+val_dir = "./dataset/val_images"
 
 
 def create_model(num_classes, model_file):
@@ -132,6 +132,6 @@ def train_model(train_df, val_df):
 
 
 if __name__ == '__main__':
-    df_train = pd.read_csv("../dataset/train_val_annotations/train.csv")
-    df_val = pd.read_csv("../dataset/train_val_annotations/val.csv")
+    df_train = pd.read_csv("./dataset/train_val_annotations/train.csv")
+    df_val = pd.read_csv("./dataset/train_val_annotations/val.csv")
     train_model(df_train, df_val)
