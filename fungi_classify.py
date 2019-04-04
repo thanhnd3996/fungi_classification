@@ -1,9 +1,9 @@
 import pandas as pd
 from keras import Model
-from keras.optimizers import SGD
-from keras.callbacks import ModelCheckpoint
 from keras.applications.resnet50 import ResNet50
+from keras.callbacks import ModelCheckpoint
 from keras.layers import GlobalAveragePooling2D, Dense
+from keras.optimizers import SGD
 from keras.preprocessing.image import ImageDataGenerator
 
 """file path"""
@@ -17,11 +17,6 @@ def create_model(num_classes):
     # create a resnet pre-trained model
     base_model = ResNet50(weights='imagenet', include_top=False)
 
-    # first, train only the top layers
-    # freeze all convolutional resnet50 layers
-    for layer in base_model.layers:
-        layer.trainable = False
-
     # add a global average pooling layer
     x = base_model.output
     x = GlobalAveragePooling2D()(x)
@@ -34,6 +29,15 @@ def create_model(num_classes):
 
     # model
     model = Model(inputs=base_model.input, outputs=predictions)
+
+    # first, train only the top layers
+    # freeze all convolutional resnet50 layers
+    for layer in base_model.layers:
+        layer.trainable = False
+
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='rmsprop')
+
     # model.summary()
 
     return model
@@ -64,7 +68,7 @@ def augment_data(model, epochs=100, batch_size=32,
         class_mode='categorical')
 
     # compile model and fit
-    model.compile(loss='sparse_categorical_crossentropy',
+    model.compile(loss='categorical_crossentropy',
                   optimizer=SGD(lr=1e-4, momentum=0.9),
                   metrics=['accuracy'])
 
