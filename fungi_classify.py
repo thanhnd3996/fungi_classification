@@ -1,6 +1,6 @@
 import pandas as pd
 from keras import Model
-from keras.applications.resnet50 import ResNet50
+from keras.applications.inception_v3 import InceptionV3
 from keras.callbacks import ModelCheckpoint
 from keras.layers import GlobalAveragePooling2D, Dense
 from keras.optimizers import SGD
@@ -15,7 +15,7 @@ val_dir = "./dataset/val_images"
 
 def create_model(num_classes):
     # create a resnet pre-trained model
-    base_model = ResNet50(weights='imagenet', include_top=False)
+    base_model = InceptionV3(weights='imagenet', include_top=False)
 
     # add a global average pooling layer
     x = base_model.output
@@ -38,7 +38,7 @@ def create_model(num_classes):
     model.compile(loss='categorical_crossentropy',
                   optimizer='rmsprop')
 
-    # model.summary()
+    model.summary()
 
     return model
 
@@ -46,13 +46,13 @@ def create_model(num_classes):
 def augment_data(model, epochs=100, batch_size=32,
                  img_width=64, img_height=64,
                  nb_train_samples=85578, nb_val_samples=4182):
-    train_data_gen = ImageDataGenerator(1. / 255,
+    train_data_gen = ImageDataGenerator(preprocessing_function=pre_process,
                                         horizontal_flip=True,
                                         zoom_range=0.2,
                                         width_shift_range=0.2,
                                         height_shift_range=0.2,
                                         rotation_range=20)
-    val_data_gen = ImageDataGenerator(rescale=1. / 255)
+    val_data_gen = ImageDataGenerator(preprocessing_function=pre_process)
 
     # define train & val data generators
     train_generator = train_data_gen.flow_from_directory(
@@ -87,6 +87,13 @@ def augment_data(model, epochs=100, batch_size=32,
     score = model.evaluate_generator(train_generator, verbose=0)
     print('Test score: ', score[0])
     print('Test accuracy: ', score[1])
+
+
+def pre_process(x):
+    x /= 255.
+    x -= 0.5
+    x *= 2.
+    return x
 
 
 def train_model(train_df):
