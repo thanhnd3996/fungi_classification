@@ -44,7 +44,7 @@ def create_model(num_classes):
 
 
 def augment_data(model, epochs=100, batch_size=32,
-                 img_width=64, img_height=64,
+                 img_width=299, img_height=299,
                  nb_train_samples=85578, nb_val_samples=4182):
     train_data_gen = ImageDataGenerator(preprocessing_function=pre_process,
                                         horizontal_flip=True,
