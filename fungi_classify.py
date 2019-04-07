@@ -1,7 +1,7 @@
 from keras.applications.inception_v3 import InceptionV3
-from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.callbacks import ModelCheckpoint
 from keras.layers import GlobalAveragePooling2D, Dense
-from keras.models import Model, model_from_json
+from keras.models import Model
 from keras.optimizers import SGD
 from keras.preprocessing.image import ImageDataGenerator
 
@@ -53,8 +53,8 @@ def create_model(num_classes):
     return model
 
 
-def fine_tune(model, nb_train_samples, nb_val_samples, epochs_1=15, epochs_2=30, batch_size=32,
-              img_width=64, img_height=64):
+def fine_tune(model, nb_train_samples, nb_val_samples, epochs_1=15, epochs_2=30, batch_size=16,
+              img_width=299, img_height=299):
     train_data_gen = ImageDataGenerator(preprocessing_function=pre_process,
                                         horizontal_flip=True,
                                         zoom_range=0.2,
@@ -82,12 +82,11 @@ def fine_tune(model, nb_train_samples, nb_val_samples, epochs_1=15, epochs_2=30,
         epochs=epochs_1,
         validation_data=validation_generator,
         validation_steps=nb_val_samples // batch_size,
-        callbacks=[EarlyStopping(monitor='val_loss'),
-                   ModelCheckpoint(checkpoint_path_1, save_best_only=True, verbose=1, monitor='val_acc', mode='max')])
+        callbacks=[ModelCheckpoint(checkpoint_path_1, save_best_only=True, verbose=1, monitor='val_acc', mode='max')])
 
     model.save_weights(inception_h5_1)
 
-    # only freeze 172 first layer
+    # freeze only 172 first layer
     for layer in model.layers[:172]:
         layer.trainable = False
     for layer in model.layers[172:]:
@@ -104,59 +103,58 @@ def fine_tune(model, nb_train_samples, nb_val_samples, epochs_1=15, epochs_2=30,
         epochs=epochs_2,
         validation_data=validation_generator,
         validation_steps=nb_val_samples // batch_size,
-        callbacks=[EarlyStopping(monitor='val_loss'),
-                   ModelCheckpoint(checkpoint_path_2, save_best_only=True, verbose=1, monitor='val_acc', mode='max')])
+        callbacks=[ModelCheckpoint(checkpoint_path_2, save_best_only=True, verbose=1, monitor='val_acc', mode='max')])
 
     model.save_weights(inception_h5_2)
 
 
-def fine_tune_from_saved(nb_train_samples, nb_val_samples, img_width=64, img_height=64,
-                         epochs=100, batch_size=32, nb_freeze=0):
-    # load json and create model
-    with open(inception_json, 'r') as f:
-        loaded_model_json = f.read()
-    loaded_model = model_from_json(loaded_model_json)
-
-    # load weights into new model
-    loaded_model.load_weights(inception_h5_load_from)
-
-    for layer in loaded_model.layers[:nb_freeze]:
-        layer.trainable = False
-    for layer in loaded_model.layers[nb_freeze:]:
-        layer.trainable = True
-
-    # recompile and augmentation
-    loaded_model.compile(optimizer=SGD(lr=1e-4, momentum=0.9), loss='categorical_crossentropy')
-    train_datagen = ImageDataGenerator(
-        preprocessing_function=pre_process,
-        horizontal_flip=True,
-        zoom_range=0.2,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        rotation_range=20)
-
-    val_datagen = ImageDataGenerator(preprocessing_function=pre_process)
-
-    train_generator = train_datagen.flow_from_directory(
-        train_dir,
-        target_size=(img_width, img_height),
-        batch_size=batch_size,
-        class_mode='categorical')
-
-    val_generator = val_datagen.flow_from_directory(
-        val_dir,
-        target_size=(img_width, img_height),
-        batch_size=batch_size,
-        class_mode='categorical')
-    loaded_model.fit_generator(
-        train_generator,
-        steps_per_epoch=nb_train_samples // batch_size,
-        epochs=epochs,
-        validation_data=val_generator,
-        validation_steps=nb_val_samples // batch_size,
-        callbacks=[EarlyStopping(monitor='val_loss'),
-                   ModelCheckpoint(checkpoint_path, save_best_only=True, verbose=1, monitor='val_acc', mode='max')])
-    loaded_model.save_weights(inception_h5_save_to)
+# def fine_tune_from_saved(nb_train_samples, nb_val_samples, img_width=299, img_height=299,
+#                          epochs=100, batch_size=16, nb_freeze=0):
+#     # load json and create model
+#     with open(inception_json, 'r') as f:
+#         loaded_model_json = f.read()
+#     loaded_model = model_from_json(loaded_model_json)
+#
+#     # load weights into new model
+#     loaded_model.load_weights(inception_h5_load_from)
+#
+#     for layer in loaded_model.layers[:nb_freeze]:
+#         layer.trainable = False
+#     for layer in loaded_model.layers[nb_freeze:]:
+#         layer.trainable = True
+#
+#     # recompile and augmentation
+#     loaded_model.compile(optimizer=SGD(lr=1e-4, momentum=0.9), loss='categorical_crossentropy')
+#     train_datagen = ImageDataGenerator(
+#         preprocessing_function=pre_process,
+#         horizontal_flip=True,
+#         zoom_range=0.2,
+#         width_shift_range=0.2,
+#         height_shift_range=0.2,
+#         rotation_range=20)
+#
+#     val_datagen = ImageDataGenerator(preprocessing_function=pre_process)
+#
+#     train_generator = train_datagen.flow_from_directory(
+#         train_dir,
+#         target_size=(img_width, img_height),
+#         batch_size=batch_size,
+#         class_mode='categorical')
+#
+#     val_generator = val_datagen.flow_from_directory(
+#         val_dir,
+#         target_size=(img_width, img_height),
+#         batch_size=batch_size,
+#         class_mode='categorical')
+#     loaded_model.fit_generator(
+#         train_generator,
+#         steps_per_epoch=nb_train_samples // batch_size,
+#         epochs=epochs,
+#         validation_data=val_generator,
+#         validation_steps=nb_val_samples // batch_size,
+#         callbacks=[EarlyStopping(monitor='val_loss'),
+#                    ModelCheckpoint(checkpoint_path, save_best_only=True, verbose=1, monitor='val_acc', mode='max')])
+#     loaded_model.save_weights(inception_h5_save_to)
 
 
 def pre_process(x):
@@ -174,7 +172,7 @@ def train_model():
     model = create_model(nb_classes)
     print("Training model...")
     fine_tune(model, nb_train_samples, nb_val_samples)
-    fine_tune_from_saved(nb_train_samples, nb_val_samples)
+    # fine_tune_from_saved(nb_train_samples, nb_val_samples)
 
 
 if __name__ == '__main__':
