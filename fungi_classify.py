@@ -1,4 +1,4 @@
-import pandas as pd
+# import pandas as pd
 from keras import Model
 from keras.applications.inception_v3 import InceptionV3
 from keras.callbacks import ModelCheckpoint
@@ -9,8 +9,8 @@ from keras.preprocessing.image import ImageDataGenerator
 """file path"""
 checkpoint_path = './model/checkpoint.h5'
 model_path = './model/model.h5'
-train_dir = "./dataset/train_images"
-val_dir = "./dataset/val_images"
+train_dir = "./dataset/train_image"
+val_dir = "./dataset/val_image"
 
 
 def create_model(num_classes):
@@ -43,9 +43,8 @@ def create_model(num_classes):
     return model
 
 
-def augment_data(model, epochs=100, batch_size=32,
-                 img_width=299, img_height=299,
-                 nb_train_samples=85578, nb_val_samples=4182):
+def augment_data(model, nb_train_samples, nb_val_samples, epochs=100, batch_size=16,
+                 img_width=299, img_height=299):
     train_data_gen = ImageDataGenerator(preprocessing_function=pre_process,
                                         horizontal_flip=True,
                                         zoom_range=0.2,
@@ -83,11 +82,6 @@ def augment_data(model, epochs=100, batch_size=32,
 
     model.save_weights(model_path)
 
-    # show accuracy
-    score = model.evaluate_generator(train_generator, verbose=0)
-    print('Test score: ', score[0])
-    print('Test accuracy: ', score[1])
-
 
 def pre_process(x):
     x /= 255.
@@ -96,13 +90,20 @@ def pre_process(x):
     return x
 
 
-def train_model(train_df):
-    nb_classes = len(set(train_df.category_id))
+def train_model():
+    # nb_classes = len(set(train_df.category_id))
+    nb_classes = 100
+    nb_train_samples = 7963
+    nb_val_samples = 300
     print("Creating model...")
     model = create_model(nb_classes)
-    augment_data(model)
+    augment_data(model, nb_train_samples, nb_val_samples)
+    # nb_train_samples=len(train_df.index),
+    # nb_val_samples=len(val_df.index))
 
 
 if __name__ == '__main__':
-    df_train = pd.read_csv("./dataset/train_val_annotations/train.csv")
-    train_model(df_train)
+    # df_train = pd.read_csv("./dataset/train_val_annotations/train.csv")
+    # df_val = pd.read_csv("./dataset/train_val_annotations/val.csv")
+    # train_model(df_train, df_val)
+    train_model()
