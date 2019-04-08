@@ -108,55 +108,6 @@ def fine_tune(model, nb_train_samples, nb_val_samples, epochs_1=15, epochs_2=30,
     model.save_weights(inception_h5_2)
 
 
-# def fine_tune_from_saved(nb_train_samples, nb_val_samples, img_width=299, img_height=299,
-#                          epochs=100, batch_size=16, nb_freeze=0):
-#     # load json and create model
-#     with open(inception_json, 'r') as f:
-#         loaded_model_json = f.read()
-#     loaded_model = model_from_json(loaded_model_json)
-#
-#     # load weights into new model
-#     loaded_model.load_weights(inception_h5_load_from)
-#
-#     for layer in loaded_model.layers[:nb_freeze]:
-#         layer.trainable = False
-#     for layer in loaded_model.layers[nb_freeze:]:
-#         layer.trainable = True
-#
-#     # recompile and augmentation
-#     loaded_model.compile(optimizer=SGD(lr=1e-4, momentum=0.9), loss='categorical_crossentropy')
-#     train_datagen = ImageDataGenerator(
-#         preprocessing_function=pre_process,
-#         horizontal_flip=True,
-#         zoom_range=0.2,
-#         width_shift_range=0.2,
-#         height_shift_range=0.2,
-#         rotation_range=20)
-#
-#     val_datagen = ImageDataGenerator(preprocessing_function=pre_process)
-#
-#     train_generator = train_datagen.flow_from_directory(
-#         train_dir,
-#         target_size=(img_width, img_height),
-#         batch_size=batch_size,
-#         class_mode='categorical')
-#
-#     val_generator = val_datagen.flow_from_directory(
-#         val_dir,
-#         target_size=(img_width, img_height),
-#         batch_size=batch_size,
-#         class_mode='categorical')
-#     loaded_model.fit_generator(
-#         train_generator,
-#         steps_per_epoch=nb_train_samples // batch_size,
-#         epochs=epochs,
-#         validation_data=val_generator,
-#         validation_steps=nb_val_samples // batch_size,
-#         callbacks=[EarlyStopping(monitor='val_loss'),
-#                    ModelCheckpoint(checkpoint_path, save_best_only=True, verbose=1, monitor='val_acc', mode='max')])
-#     loaded_model.save_weights(inception_h5_save_to)
-
-
 def pre_process(x):
     x /= 255.
     x -= 0.5
