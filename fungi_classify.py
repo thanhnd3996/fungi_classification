@@ -37,11 +37,11 @@ def create_model(num_classes):
 
     # first, train only the top layers
     # freeze all convolutional resnet50 layers
-    for layer in base_model.layers:
-        layer.trainable = False
-
-    model.compile(loss='categorical_crossentropy',
-                  optimizer='rmsprop')
+    # for layer in base_model.layers:
+    #     layer.trainable = False
+    #
+    # model.compile(loss='categorical_crossentropy',
+    #               optimizer='rmsprop')
 
     model.summary()
 
@@ -55,13 +55,13 @@ def create_model(num_classes):
 
 def fine_tune(model, nb_train_samples, nb_val_samples, epochs_1=15, epochs_2=30, batch_size=16,
               img_width=299, img_height=299):
-    train_data_gen = ImageDataGenerator(preprocessing_function=pre_process,
+    train_data_gen = ImageDataGenerator(rescale=1./255,
                                         horizontal_flip=True,
                                         zoom_range=0.2,
                                         width_shift_range=0.2,
                                         height_shift_range=0.2,
                                         rotation_range=20)
-    val_data_gen = ImageDataGenerator(preprocessing_function=pre_process)
+    val_data_gen = ImageDataGenerator(rescale=1./255)
 
     # data augmentation
     train_generator = train_data_gen.flow_from_directory(
@@ -108,11 +108,11 @@ def fine_tune(model, nb_train_samples, nb_val_samples, epochs_1=15, epochs_2=30,
     model.save_weights(inception_h5_2)
 
 
-def pre_process(x):
-    x /= 255.
-    x -= 0.5
-    x *= 2.
-    return x
+# def pre_process(x):
+#     x /= 255.
+#     x -= 0.5
+#     x *= 2.
+#     return x
 
 
 def train_model():
